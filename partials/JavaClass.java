@@ -1,0 +1,98 @@
+{%- macro javaClass(name, schema, properties, required, indentLevel, isStatic) %}
+{%- set className = name | camelCase | upperFirst %}
+{% set indent1 = indentLevel | indent1 -%}
+{% set indent2 = indentLevel | indent2 -%}
+{% set indent3 = indentLevel | indent3 -%}
+{{ indent1 }}@JsonInclude(JsonInclude.Include.NON_NULL)
+{{ indent1 }}public {% if isStatic %}static {% endif %}class {{ className }} {
+{# Default constructor #}
+{{ indent2 }}public {{ className }} () {
+{{ indent2 }}}
+{# If the top level object is an array, we need to deal with that specially. -#}
+{%- if schema and schema.type() === 'array' -%}
+{%- set name = schema.title() | camelCase -%}
+{%- set type = name | upperFirst -%}
+{%- set arrayType = type + '[]' -%}
+{{ indent2 }}public {{ className }} ({{ arrayType }} {{ name }}) {
+{{ indent3 }}this.{{ name }} = {{ name }};
+{{ indent2 }}}
+{{ indent2 }}private {{ arrayType }} {{ name }};
+
+{{ indent2 }}public {{ arrayType }} get{{ type }}() { return {{ name }}; }
+{{ indent2 }}public void set{{ type }}({{ arrayType }} {{ name }}) { this.{{ name }} = {{name}}; }
+
+{{ javaClass(type, null, schema.items().properties(), schema.items().required(), indentLevel+1, true) }}
+{%- else -%} {# not an array at the top level. #}
+{%- set first = true -%}
+{#- Constructor with all properties -#}
+{{ indent2 }}public {{ className }} (
+{%- for name, prop in properties -%}
+{%- set javaName = name | identifierName -%}
+{%- set typeInfo = [name, javaName, prop] | fixType -%}
+{%- set type = typeInfo[0] -%}
+{%- if first -%}
+{%- set first = false -%}
+{%- else -%}
+, {% endif %}
+{{ indent3 }}{{ type }} {{ javaName }}
+{%- endfor -%}
+) {
+{% for name, prop in properties -%}
+{%- set javaName = name | identifierName -%}
+{{ indent3 }}this.{{ javaName }} = {{ javaName }};
+{% endfor -%}
+{{ indent2 }}}
+{% endif -%}
+
+{# Members #}
+{% for name, prop in properties -%}
+{% set javaName = name | identifierName -%}
+{% set typeInfo = [javaName, javaName, prop] | fixType -%}
+{% set type = typeInfo[0] %}
+{% if javaName !== name -%}
+{{ indent2 }}@JsonProperty("{{name}}")
+{% endif -%}
+{{ indent2 }}private {{ type }} {{ javaName }};
+{%- endfor -%}
+
+{# Getters and Setters #}
+{%- for name, prop in properties %}
+{% set javaName = name | identifierName -%}
+{% set typeInfo = [name, javaName, prop] | fixType -%}
+{% set type = typeInfo[0] -%}
+{% set isArrayOfObjects = typeInfo[1] %}
+{{ indent2 }}public {{ type }} get{{- javaName | upperFirst }}() {
+{{ indent3 }}return {{ javaName }};
+{{ indent2 }}}
+
+{{ indent2 }}public {{ className }} set{{- javaName | upperFirst }}({{ type }} {{ javaName }}) {
+{{ indent3 }}this.{{-javaName }} = {{ javaName }};
+{{ indent3 }}return this;
+{{ indent2 }}}
+{# Inner classes #}
+{%- if indentLevel == 0 and  prop.type() === 'object' %}
+{{ javaClass(javaName, null, prop.properties(), prop.required(), indentLevel+1, true) }}
+{% endif -%}
+{%- if indentLevel > 0 and prop.type === 'object' %}
+{{ javaClass(javaName, null, prop.properties, prop.required, indentLevel+1, true) }}
+{% endif -%}
+{%- if isArrayOfObjects %}
+{{ javaClass(javaName, null, prop.items().properties(), prop.items().required(), indentLevel+1, true) }}
+{% endif -%}
+{# Enums #}
+{%- if prop.enum() %}
+
+{{ indent2 }}public static enum {{ type }} { {{ prop.enum() }} }
+{% endif -%}
+{%- endfor %}
+
+{{ indent2 }}public String toString() {
+{{ indent3 }}return "{{ className }} ["
+{%- for name, prop in properties %}
+{%- set javaName = name | identifierName %}
+{{ indent3 }}+ " {{ javaName }}: " + {{ javaName }}
+{%- endfor %}
+{{ indent3 }}+ " ]";
+{{ indent2 }}}
+{{ indent1 }}}
+{% endmacro -%}
