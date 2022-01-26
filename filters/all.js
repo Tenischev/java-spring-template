@@ -13,7 +13,7 @@ function defineType(prop, propName) {
             return 'List<' + toClass(toJavaType(prop.items().type())) + '>';
         }
     } else if (prop.enum() && (prop.type() === 'string' || prop.type() === 'integer')) {
-            return _.upperFirst(_.camelCase(propName)) + 'Enum';
+        return _.upperFirst(_.camelCase(propName)) + 'Enum';
     } else if (prop.anyOf() || prop.oneOf()) {
         let propType = 'OneOf';
         let hasPrimitive = false;
@@ -60,113 +60,120 @@ function toClass(couldBePrimitive) {
 filter.toClass = toClass;
 
 function toJavaType(str, isRequired) {
-  let resultType;
-  switch(str) {
-    case 'integer':
-    case 'int32':
-      resultType = 'int'; break;
-    case 'long':
-    case 'int64':
-      resultType = 'long'; break;
-    case 'boolean':
-      resultType = 'boolean'; break;
-    case 'date':
-      resultType = 'java.time.LocalDate'; break;
-    case 'time':
-      resultType = 'java.time.OffsetTime'; break;
-    case 'dateTime':
-    case 'date-time':
-      resultType = 'java.time.OffsetDateTime'; break;
-    case 'string':
-    case 'password':
-    case 'byte':
-      resultType = 'String'; break;
-    case 'float':
-      resultType = 'float'; break;
-    case 'number':
-    case 'double':
-      resultType = 'double'; break;
-    case 'binary':
-      resultType = 'byte[]'; break;
-    default:
-      resultType = 'Object'; break;
-  }
-  return isRequired ? resultType : toClass(resultType);
+    let resultType;
+    switch(str) {
+        case 'integer':
+        case 'int32':
+            resultType = 'int'; break;
+        case 'long':
+        case 'int64':
+            resultType = 'long'; break;
+        case 'boolean':
+            resultType = 'boolean'; break;
+        case 'date':
+            resultType = 'java.time.LocalDate'; break;
+        case 'time':
+            resultType = 'java.time.OffsetTime'; break;
+        case 'dateTime':
+        case 'date-time':
+            resultType = 'java.time.OffsetDateTime'; break;
+        case 'string':
+        case 'password':
+        case 'email':
+        case 'uri':
+        case 'hostname':
+        case 'ipv4':
+        case 'ipv6':
+        case 'byte':
+            resultType = 'String'; break;
+        case 'uuid':
+            resultType = 'java.util.UUID'; break;
+        case 'float':
+            resultType = 'float'; break;
+        case 'number':
+        case 'double':
+            resultType = 'double'; break;
+        case 'binary':
+            resultType = 'byte[]'; break;
+        default:
+            resultType = 'Object'; break;
+    }
+    return isRequired ? resultType : toClass(resultType);
 }
 filter.toJavaType = toJavaType;
 
 function isDefined(obj) {
-  return typeof obj !== 'undefined'
+    return typeof obj !== 'undefined'
 }
 filter.isDefined = isDefined;
 
 function isProtocol(api, protocol){
-  return api.constructor.stringify(api).includes('"protocol":"' + protocol + '"');
+    return api.constructor.stringify(api).includes('"protocol":"' + protocol + '"');
 };
 filter.isProtocol = isProtocol;
 
 function isObjectType(schemas){
-  var res = [];
-  for (let obj of schemas) {
-    if (obj._json['type'] === 'object' && !obj._json['x-parser-schema-id'].startsWith('<')) {
-      res.push(obj);
+    var res = [];
+    for (let obj of schemas) {
+        if (obj._json['type'] === 'object' && !obj._json['x-parser-schema-id'].startsWith('<')) {
+            res.push(obj);
+        }
     }
-  }
-  return res;
+    return res;
 };
 filter.isObjectType = isObjectType;
 
 function examplesToString(ex){
-  let retStr = "";
-  ex.forEach(example => {
-    if (retStr !== "") {retStr += ", "}
-    if (typeof example == "object") {
-      try {
-        retStr += JSON.stringify(example);
-      } catch (ignore) {
-        retStr += example;
-      }
-    } else {
-      retStr += example;
-    }
-  });
-  return retStr;
+    let retStr = "";
+    ex.forEach(example => {
+        if (retStr !== "") {retStr += ", "}
+        if (typeof example == "object") {
+            try {
+                retStr += JSON.stringify(example);
+            } catch (ignore) {
+                retStr += example;
+            }
+        } else {
+            retStr += example;
+        }
+    });
+    return retStr;
 };
 filter.examplesToString = examplesToString;
 
 function splitByLines(str){
-  if (str) {
-    return str.split(/\r?\n|\r/).filter((s) => s !== "");
-  } else {
-    return "";
-  }
+    if (str) {
+        return str.split(/\r?\n|\r/).filter((s) => s !== "");
+    } else {
+        return "";
+    }
 };
 filter.splitByLines = splitByLines;
 
 function isRequired(name, list){
-  return list && list.includes(name);
+    return list && list.includes(name);
 };
 filter.isRequired = isRequired;
 
 function schemeExists(collection, scheme){
-  return _.some(collection, {'scheme': scheme});
+    return _.some(collection, {'scheme': scheme});
 };
 filter.schemeExists = schemeExists;
 
 function createEnum(val){
-  let result;
-  let withoutNonWordChars = val.replace(/[^A-Z^a-z^0-9]/g, "_");
-  if ((new RegExp('^[^A-Z^a-z]', 'i')).test(withoutNonWordChars)) {
-    result = '_' + withoutNonWordChars;
-  } else {
-    result = withoutNonWordChars;
-  }
-  return result;
+    let result;
+    let withoutNonWordChars = val.replace(/[^A-Z^a-z^0-9]/g, "_");
+    if ((new RegExp('^[^A-Z^a-z]', 'i')).test(withoutNonWordChars)) {
+        result = '_' + withoutNonWordChars;
+    } else {
+        result = withoutNonWordChars;
+    }
+    return result;
 };
 filter.createEnum = createEnum;
 
-function addBackSlashToPattern(val) {  
-  let result = val.replace(/\\/g, "\\\\");
-  return result;
+function addBackSlashToPattern(val) {
+    let result = val.replace(/\\/g, "\\\\");
+    return result;
 }
 filter.addBackSlashToPattern = addBackSlashToPattern;

@@ -49,6 +49,9 @@ components:
           description: Light intensity measured in lumens.
         sentAt:
           $ref: "#/components/schemas/sentAt"
+        payloadId:
+          type: string
+          format: uuid
     sentAt:
       type: string
       format: date-time
